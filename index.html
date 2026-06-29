@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XP 파티클 피드백 - 포지앤포춘</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0e0c07;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  padding: 20px;
+}
+.label {
+  font-size: 12px;
+  color: #5a5040;
+  margin-bottom: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.phone {
+  width: 320px;
+  height: 580px;
+  background: #1a1208;
+  border-radius: 24px;
+  border: 2px solid #3a2e1a;
+  position: relative;
+  overflow: hidden;
+}
+.hud {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 10;
+}
+.avatar-wrap {
+  position: relative;
+  width: 44px;
+  height: 44px;
+}
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #5a3a1a;
+  border: 2px solid #c8922a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+.lv-badge {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #c8922a;
+  color: #2a1a04;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.xp-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  position: relative;
+}
+.xp-label {
+  font-size: 10px;
+  color: #c8b080;
+}
+.xp-bar-bg {
+  width: 110px;
+  height: 8px;
+  background: #2a1f0a;
+  border-radius: 4px;
+  border: 1px solid #5a4520;
+  overflow: hidden;
+  position: relative;
+}
+.xp-bar-fill {
+  height: 100%;
+  width: 38%;
+  background: #e8a020;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+.xp-bar-glow {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,220,100,0);
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+.xp-float {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffe066;
+  pointer-events: none;
+  opacity: 0;
+  left: 8px;
+  top: -18px;
+  white-space: nowrap;
+}
+.game-scene {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 60%, #3a2e1a 0%, #1a1208 100%);
+}
+.stone-floor {
+  position: absolute;
+  bottom: 80px;
+  left: 20px;
+  right: 20px;
+  height: 160px;
+  background: #2d2416;
+  border-radius: 8px;
+  border: 1px solid #4a3820;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.loader-card {
+  background: linear-gradient(135deg, #1e3a1e, #2a4a2a);
+  border: 2px solid #3a8a3a;
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.1s;
+  position: relative;
+}
+.loader-card:active { transform: scale(0.96); }
+.loader-icon { font-size: 22px; }
+.loader-info { display: flex; flex-direction: column; gap: 2px; }
+.loader-name { font-size: 13px; font-weight: 600; color: #d0f0d0; }
+.loader-cost { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #e8a020; }
+.btn-buy {
+  background: #2a7a2a;
+  border: 1px solid #3aaa3a;
+  border-radius: 6px;
+  color: #c0f0c0;
+  font-size: 11px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn-buy:disabled { opacity: 0.5; cursor: default; }
+.canvas-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+}
+.hint {
+  position: absolute;
+  bottom: 16px;
+  left: 0; right: 0;
+  text-align: center;
+  font-size: 11px;
+  color: #7a6a4a;
+}
+.reset-btn {
+  margin-top: 16px;
+  font-size: 12px;
+  padding: 7px 20px;
+  color: #7a6a4a;
+  background: #1e1a10;
+  border: 1px solid #3a3020;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.reset-btn:hover { background: #2a2418; }
+</style>
+</head>
+<body>
+
+<div class="label">XP 파티클 피드백 프로토타입</div>
+
+<div class="phone" id="phone">
+  <div class="game-scene"></div>
+  <div class="hud">
+    <div class="avatar-wrap" id="avatarWrap">
+      <div class="avatar">🧔</div>
+      <div class="lv-badge">LV. 4</div>
+    </div>
+    <div class="xp-col">
+      <div class="xp-label">경험치</div>
+      <div class="xp-bar-bg">
+        <div class="xp-bar-fill" id="xpFill">
+          <div class="xp-bar-glow" id="xpGlow"></div>
+        </div>
+      </div>
+      <div class="xp-float" id="xpFloat">+15 XP</div>
+    </div>
+  </div>
+  <div class="stone-floor">
+    <div class="loader-card" id="loaderCard">
+      <div class="loader-icon">⚙️</div>
+      <div class="loader-info">
+        <div class="loader-name">Loader</div>
+        <div class="loader-cost">🪙 990</div>
+      </div>
+      <button class="btn-buy" id="buyBtn">생성</button>
+    </div>
+  </div>
+  <canvas class="canvas-overlay" id="particleCanvas"></canvas>
+  <div class="hint" id="hint">⬆ 생성 버튼을 눌러보세요</div>
+</div>
+
+<button class="reset-btn" id="resetBtn">↺ 초기화</button>
+
+<script>
+const canvas = document.getElementById('particleCanvas');
+const ctx = canvas.getContext('2d');
+const phone = document.getElementById('phone');
+const xpFill = document.getElementById('xpFill');
+const xpGlow = document.getElementById('xpGlow');
+const xpFloat = document.getElementById('xpFloat');
+const buyBtn = document.getElementById('buyBtn');
+const hint = document.getElementById('hint');
+const avatarWrap = document.getElementById('avatarWrap');
+
+let particles = [];
+let xpPct = 38;
+let animating = false;
+let raf;
+
+function resize() {
+  const r = phone.getBoundingClientRect();
+  canvas.width = r.width;
+  canvas.height = r.height;
+}
+resize();
+window.addEventListener('resize', resize);
+
+function getRelPos(el) {
+  const pr = phone.getBoundingClientRect();
+  const er = el.getBoundingClientRect();
+  return {
+    x: er.left - pr.left + er.width / 2,
+    y: er.top - pr.top + er.height / 2
+  };
+}
+
+function spawnParticles(fromEl, toEl, count) {
+  const from = getRelPos(fromEl);
+  const to = getRelPos(toEl);
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: from.x + (Math.random() - 0.5) * 30,
+      y: from.y + (Math.random() - 0.5) * 20,
+      tx: to.x,
+      ty: to.y,
+      size: 3 + Math.random() * 3,
+      delay: i * 28 + Math.random() * 20,
+      t: 0,
+      dur: 420 + Math.random() * 180,
+      opacity: 0,
+      color: Math.random() > 0.4 ? '#ffe066' : '#f0a020',
+      done: false
+    });
+  }
+}
+
+function easeInOutQuad(t) {
+  return t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+}
+
+let lastTime = null;
+function loop(ts) {
+  if (!lastTime) lastTime = ts;
+  const dt = ts - lastTime;
+  lastTime = ts;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  let allDone = true;
+  for (const p of particles) {
+    p.delay -= dt;
+    if (p.delay > 0) { allDone = false; continue; }
+    p.t += dt;
+    const prog = Math.min(p.t / p.dur, 1);
+
+    p.x = p.x + (p.tx - p.x) * (dt / (p.dur - p.t + dt)) * 0.18;
+    p.y = p.y + (p.ty - p.y) * (dt / (p.dur - p.t + dt)) * 0.18;
+
+    if (prog < 0.2) p.opacity = prog / 0.2;
+    else if (prog > 0.75) p.opacity = 1 - (prog - 0.75) / 0.25;
+    else p.opacity = 1;
+
+    if (prog >= 1) { p.done = true; continue; }
+    allDone = false;
+
+    ctx.globalAlpha = p.opacity * 0.9;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * (1 - prog * 0.4), 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.globalAlpha = p.opacity * 0.35;
+    ctx.fillStyle = '#fff8d0';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * 0.4 * (1 - prog * 0.5), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  particles = particles.filter(p => !p.done);
+
+  if (!allDone || particles.length > 0) {
+    raf = requestAnimationFrame(loop);
+  } else {
+    lastTime = null;
+    triggerXpBar();
+  }
+}
+
+function triggerXpBar() {
+  const newPct = Math.min(xpPct + 15, 100);
+  xpFill.style.width = newPct + '%';
+  xpGlow.style.background = 'rgba(255,220,100,0.55)';
+  setTimeout(() => { xpGlow.style.background = 'rgba(255,220,100,0)'; }, 500);
+
+  xpFloat.style.transition = 'none';
+  xpFloat.style.opacity = '1';
+  xpFloat.style.top = '-18px';
+  setTimeout(() => {
+    xpFloat.style.transition = 'top 0.7s ease, opacity 0.7s ease';
+    xpFloat.style.top = '-34px';
+    xpFloat.style.opacity = '0';
+  }, 80);
+
+  avatarWrap.style.transition = 'transform 0.12s';
+  avatarWrap.style.transform = 'scale(1.18)';
+  setTimeout(() => { avatarWrap.style.transform = 'scale(1)'; }, 200);
+
+  xpPct = newPct;
+  animating = false;
+  buyBtn.disabled = false;
+  buyBtn.textContent = xpPct >= 100 ? '최대!' : '생성';
+  hint.textContent = xpPct >= 100 ? '경험치가 가득 찼어요!' : '⬆ 한 번 더 눌러보세요';
+}
+
+buyBtn.addEventListener('click', () => {
+  if (animating) return;
+  animating = true;
+  buyBtn.disabled = true;
+  hint.textContent = '';
+  spawnParticles(document.getElementById('loaderCard'), avatarWrap, 22);
+  lastTime = null;
+  raf = requestAnimationFrame(loop);
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  cancelAnimationFrame(raf);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles = [];
+  xpPct = 38;
+  xpFill.style.width = '38%';
+  xpGlow.style.background = 'rgba(255,220,100,0)';
+  xpFloat.style.opacity = '0';
+  avatarWrap.style.transform = 'scale(1)';
+  animating = false;
+  buyBtn.disabled = false;
+  buyBtn.textContent = '생성';
+  hint.textContent = '⬆ 생성 버튼을 눌러보세요';
+  lastTime = null;
+});
+</script>
+</body>
+</html>
